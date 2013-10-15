@@ -1,0 +1,35 @@
+@mixin prefixed($name, $argument) {
+  -webkit-#{$name}: $argument;
+  -ms-#{$name}: $argument;
+  -moz-#{$name}: $argument;
+  -o-#{$name}: $argument;
+  #{$name}: $argument;
+}
+
+@mixin animated($t: 0.3s, $type: ease){
+	-webkit-transition: all $t $type;                  
+    -moz-transition: all $t $type;                 
+    -o-transition: all $t $type;   
+    -ms-transition: all $t $type;          
+    transition: all $t $type;
+}
+
+#reactbox-fade, #reactbox-lightbox{
+	position: fixed; z-index:5000; display:none;
+}
+#reactbox-lightbox{
+	.reactbox-loading{color:#FFF;}
+	.reactbox-image{max-width:none;}
+	.reactbox-close{background: #FFF; width:40px; height:40px; line-height:40px; right:-10px; top:-10px; position: absolute; border-radius:40px; text-align: center; border:1px solid #CCC; cursor: pointer; color:#666; font-size:20px; display: none}
+	iframe{width:100%; height:100%; border:0; overflow:auto;}
+}
+@media screen and (max-width:480px) {
+	#reactbox-lightbox{
+		overflow: auto;
+		//-webkit-overflow-scrolling:touch; overflow:auto;
+		.reactbox-close{width:60px; height:60px; line-height:60px; font-size:30px; border-radius:0 0 0 30px; position: fixed;}
+	}
+}
+#reactbox-fade{
+	width:100%; height:100%; top:0; left:0; background: #000;
+}
