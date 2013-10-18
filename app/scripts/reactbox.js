@@ -66,8 +66,8 @@
 						var bounds = [image.width(), image.height(), lightbox.offset().top, lightbox.offset().left]
 						image.css({width: targetImg.width(), height: targetImg.height() });
 						lightbox.css({top: targetImg.offset().top, left: targetImg.offset().left});
-						image.animate({width: bounds[0], height: bounds[1]});
-						lightbox.animate({top: bounds[2], left: bounds[3]});
+						image.animate({width: bounds[0], height: bounds[1]}, 500);
+						lightbox.animate({top: bounds[2], left: bounds[3]}, 500);
 					}else{
 						image.hide();
 						image.fadeIn();
@@ -89,8 +89,19 @@
 		}
 
 		function close_reactbox(){
-			fade.animate({opacity: 0}, 300, remove_reactbox);
-			lightbox.animate({opacity: 0}, 300, remove_reactbox);
+			if(w > 480 && target.children('img').length == 1){
+				var targetImg = target.children('img:first');
+				var bounds = [targetImg.width(), targetImg.height(), targetImg.offset().top, targetImg.offset().left]
+
+				fade.animate({opacity: 0}, 300);
+				image.animate({width: bounds[0], height: bounds[1]}, 500);
+				lightbox.animate({top: bounds[2], left: bounds[3]}, 500, function(){
+					lightbox.animate({opacity: 0}, 300, remove_reactbox);
+				});
+			}else{
+				fade.animate({opacity: 0}, 300);
+				lightbox.animate({opacity: 0}, 300, remove_reactbox);
+			}
 		}
 
 		/*function dblclick_close(){
