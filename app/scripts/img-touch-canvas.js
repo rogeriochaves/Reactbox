@@ -1,6 +1,6 @@
 /*
 =================================
-img-touch-canvas - v0.1
+img-touch-canvas - v0.1 - edited for reactbox by @_rchaves_
 http://github.com/rombdn/img-touch-canvas
 
 (c) 2013 Romain BEAUDON
@@ -17,6 +17,7 @@ This code may be freely distributed under the MIT License
             throw 'ImgZoom constructor: missing arguments canvas or path';
         }
 
+        var self = this;
         this.canvas         = options.canvas;
         this.canvas.width   = this.canvas.clientWidth;
         this.canvas.height  = this.canvas.clientHeight;
@@ -34,6 +35,10 @@ This code may be freely distributed under the MIT License
         };
         this.imgTexture = new Image();
         this.imgTexture.src = options.path;
+        this.imgTexture.onload = function() {
+            self.originalWidth = self.imgTexture.width;
+            self.originalHeight = self.imgTexture.height;
+        };
 
         this.lastZoomScale = null;
         this.lastX = null;
@@ -51,6 +56,7 @@ This code may be freely distributed under the MIT License
 
     ImgTouchCanvas.prototype = {
         animate: function() {
+            if(this.detached) return;
             //set scale such as image cover all the canvas
             if(!this.init) {
                 /*if(this.imgTexture.width) {
@@ -68,6 +74,24 @@ This code may be freely distributed under the MIT License
                 }*/
             }
 
+            if(!this.originalWidth){
+                this.originalWidth = this.imgTexture.width;
+                this.originalHeight = this.imgTexture.height;
+            }else{
+                if(this.canvas.height > this.originalHeight){
+                    var scale = this.canvas.height / this.originalHeight;
+                    this.scale.y = scale;
+                    this.scale.x = scale;
+                }
+                if(this.canvas.width > this.originalWidth){
+                    var scale = this.canvas.width / this.originalWidth;
+                    if(scale > this.scale.x){
+                        this.scale.x = scale;
+                        this.scale.y = scale;
+                    }
+                }
+            }
+
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
             this.context.drawImage(
@@ -79,6 +103,9 @@ This code may be freely distributed under the MIT License
             requestAnimationFrame(this.animate.bind(this));
         },
 
+        remove: function(){
+            this.detached = true;
+        },
 
         gesturePinchZoom: function(event) {
             var zoom = false;

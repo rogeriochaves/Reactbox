@@ -1,10 +1,24 @@
+/*
+=================================
+reactbox - v0.1
+http://github.com/rogeriochaves/reactbox
+
+(c) 2013 Rogério Chaves
+This code may be freely distributed under the MIT License
+=================================
+*/
+
 (function($){
 
 	var template = '														\
 		<div id="reactbox-fade"></div>										\
 		<div id="reactbox-lightbox">										\
 			<div class="reactbox-close">x</div>								\
-			<div class="reactbox-loading">Carregando...</div>				\
+			<div class="reactbox-loading"><span>Carregando...</span></div>	\
+			<div class="reactbox-arrows">									\
+				<div class="arrow arrow-next">&gt;</div>					\
+				<div class="arrow arrow-prev">&lt;</div>					\
+			</div>															\
 			<div class="contents">											\
 				<img src="{{href}}" class="reactbox-image" />				\
 			</div>															\
@@ -12,9 +26,10 @@
 	';
 
 	$.fn.reactbox = function(opts) {
+		var gallery = $(this);
 		var open = false;
-		var fade, lightbox, image, canvas, target;//iframe;
-		//var viewportmeta = document.querySelector('meta[name="viewport"]');
+		var loaded = {};
+		var fade, lightbox, image, canvas, target, gesturableImg, initialized;
 		var w = $(window).width();
 		var h = $(window).height();
 		var defaults = {
@@ -29,7 +44,7 @@
 			e.preventDefault(); 
 
 			// Seta a lightbox
-			remove_reactbox();
+			removeReactbox();
 			target = $(this);
 			opts.href = target.attr('href');
 			$('body').append(Mustache.to_html(template, opts));
@@ -37,105 +52,149 @@
 			lightbox = $('#reactbox-lightbox');
 			image = $('#reactbox-lightbox .reactbox-image');
 			loading = $('#reactbox-lightbox .reactbox-loading');
+			arrows = $('#reactbox-lightbox .reactbox-arrows');
 			close = $('#reactbox-lightbox .reactbox-close');
+			initialized = false;
+
+			if(gallery.length > 1){
+				arrows.fadeIn();
+			}else{
+				arrows.hide();
+			}
 
 			fade.css({opacity: 0}).show().animate({opacity: 0.5}, 300);
 			lightbox.css({opacity: 0}).show().animate({opacity: 1}, 300);
 			image.hide();
-			on_resize();
-			$.get(opts.href, function(data){
-				// Abre a lightbox
-				loading.hide();
-				image.show();
-				fade.click(close_reactbox);
-				close.click(close_reactbox);
-				//lightbox.delegate('canvas', 'dblclick', dblclick_close);
+			onResize();
+			loadImage();
+		});
 
-				// Define o tamanho real da imagem
-				image.css({position: 'fixed'});
+		function openImage(){
+			// Abre a lightbox
+			loading.hide();
+			image.show();
+			addListeners();
+
+			// Define o tamanho real da imagem
+			image.attr('src', opts.href);
+			image.load(function(){
+				image.css({position: 'fixed', width: 'auto', height: 'auto'});
 				opts.maxWidth = image.width();
 				opts.maxHeight = image.height();
 				image.css({position: 'static'});
 
 				open = true;
-				$(window).resize(on_resize);
-				on_resize();
-				if(w > 480){
+				onResize();
+				if(!initialized && w > 480){
 					if(target.children('img').length == 1){
 						var targetImg = target.children('img:first');
-						var bounds = [image.width(), image.height(), lightbox.offset().top, lightbox.offset().left]
+						var bounds = [image.width(), image.height(), lightbox.offset().top, lightbox.offset().left];
 						image.css({width: targetImg.width(), height: targetImg.height() });
 						lightbox.css({top: targetImg.offset().top, left: targetImg.offset().left});
 						image.animate({width: bounds[0], height: bounds[1]}, 500);
-						lightbox.animate({top: bounds[2], left: bounds[3]}, 500);
+						lightbox.stop().css({opacity: 1}).animate({top: bounds[2], left: bounds[3]}, 500);
 					}else{
 						image.hide();
 						image.fadeIn();
 					}
 				}
 				close.fadeIn();
-			}).error(function(){
-				fade.click(close_reactbox);
-				loading.html("Um erro ocorreu ao tentar carregar a imagem");
-				on_resize();
+				initialized = true;
 			});
-		});
-
-		function remove_reactbox(){
-			$('#reactbox-fade, #reactbox-lightbox').remove();
-			fade = null; lightbox = null; image = null; canvas = null; target = null;
-			open = false;
-			$(window).unbind('resize', on_resize);
 		}
 
-		function close_reactbox(){
-			if(w > 480 && target.children('img').length == 1){
-				var targetImg = target.children('img:first');
-				var bounds = [targetImg.width(), targetImg.height(), targetImg.offset().top, targetImg.offset().left]
-
-				fade.animate({opacity: 0}, 300);
-				image.animate({width: bounds[0], height: bounds[1]}, 500);
-				lightbox.animate({top: bounds[2], left: bounds[3]}, 500, function(){
-					lightbox.animate({opacity: 0}, 300, remove_reactbox);
-				});
+		function loadImage(){
+			if(loaded[opts.href]){
+				openImage();
 			}else{
-				fade.animate({opacity: 0}, 300);
-				lightbox.animate({opacity: 0}, 300, remove_reactbox);
+				$.get(opts.href, function(){
+					loaded[opts.href] = true;
+					openImage();
+				}).error(function(){
+					fade.click(closeReactbox);
+					loading.html("Um erro ocorreu ao tentar carregar a imagem");
+					onResize();
+				});
 			}
 		}
 
-		/*function dblclick_close(){
-			if(w <= 480) close_reactbox();
-		}*/
+		function addListeners(){
+			if(initialized) return;
+			$(window).resize(onResize);
+			fade.click(closeReactbox);
+			close.click(closeReactbox);
+			arrows.find('.arrow').click(nextPrevItem);
+		}
 
-		function on_resize(){
+		function removeReactbox(){
+			$('#reactbox-fade, #reactbox-lightbox').remove();
+			fade = null; lightbox = null; image = null; canvas = null; target = null;
+			open = false;
+			if(gesturableImg) gesturableImg.remove();
+			gesturableImg = null;
+			$(window).unbind('resize', onResize);
+		}
+
+		function closeReactbox(){
+			if(w > 480 && target.children('img').length == 1){
+				var targetImg = target.children('img:first');
+				var bounds = [targetImg.width(), targetImg.height(), targetImg.offset().top, targetImg.offset().left];
+
+				close.fadeOut();
+				arrows.fadeOut();
+				fade.animate({opacity: 0}, 300);
+				image.animate({width: bounds[0], height: bounds[1]}, 500);
+				lightbox.animate({top: bounds[2], left: bounds[3]}, 500, function(){
+					lightbox.animate({opacity: 0}, 300, removeReactbox);
+				});
+			}else{
+				fade.animate({opacity: 0}, 300);
+				lightbox.animate({opacity: 0}, 300, removeReactbox);
+			}
+		}
+
+		function nextPrevItem(){
+			var next;
+			var current = gallery.index(target);
+			if($(this).hasClass('arrow-prev')){
+				next = gallery.eq(current - 1); 
+				if(next.length == 0){
+					next = gallery.eq(-1); 
+				}
+			}else{
+				next = gallery.eq(current + 1); 
+				if(next.length == 0){
+					next = gallery.eq(0); 
+				}
+			}
+			target = next;
+			opts.href = target.attr('href');
+			if(!loaded[opts.href]) loading.show();
+			loadImage();
+		}
+
+		function onResize(){
 			w = $(window).width();
 			h = $(window).height();
 			if(w <= 480){
 				lightbox.css({width: '100%', height: '100%', top: 0, left: 0});
 				if(open && opts.maxWidth && opts.maxHeight){
-					//image.css({width: opts.maxWidth, height: opts.maxHeight});
 					image.hide();
 					if(canvas) canvas.remove();
 					lightbox.append('<canvas id="reactbox-canvas" style="width: 100%; height: 100%"></canvas>');
 					canvas = lightbox.find('canvas');
-					var gesturableImg = new ImgTouchCanvas({
+					if(gesturableImg) gesturableImg.remove();
+					gesturableImg = new ImgTouchCanvas({
 			            canvas: document.getElementById('reactbox-canvas'),
 			            path: image.attr('src'),
 			            desktop: true
 			        });
-
-					/*lightbox.iframe({body: image, head: '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes" />'});
-					iframe = lightbox.find('iframe');*/
 				}
 			}else{
 				if(canvas){
 					image.show();
 					canvas.remove();
 					canvas = null;
-					//image.appendTo(lightbox);
-					//iframe.remove();
-					//iframe = null;
 				}
 				if(open && opts.maxWidth && opts.maxHeight && !isNaN(opts.maxWidth) && !isNaN(opts.maxHeight)){
 					var imgHeight = h > opts.maxHeight ? opts.maxHeight : h;
@@ -163,11 +222,6 @@
 				var boxTop = h / 2 - (imgHeight || lightbox.height()) / 2;
 				var boxLeft = w / 2 - (imgWidth || lightbox.width()) / 2;
 				lightbox.css({top: boxTop, left: boxLeft});
-				/*setTimeout(function(){
-					boxTop = h / 2 - imgHeight / 2;
-					boxLeft = w / 2 - imgWidth / 2;
-					lightbox.css({top: boxTop, left: boxLeft});
-				}, 0);*/
 			}
 		}
 	};
