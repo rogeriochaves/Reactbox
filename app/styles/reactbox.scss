@@ -35,8 +35,12 @@
 @media screen and (max-width:480px) {
 	#reactbox-lightbox{
 		overflow: auto;
-		//-webkit-overflow-scrolling:touch; overflow:auto;
 		.reactbox-close{width:60px; height:60px; line-height:60px; font-size:30px; border-radius:0 0 0 30px; position: fixed;}
+		.reactbox-arrows{
+			.arrow{top:auto; bottom:0}
+			.arrow-next{border-radius:35px 0 0 0}
+			.arrow-prev{border-radius:0 35px 0 0}
+		}
 	}
 }
 #reactbox-fade{
