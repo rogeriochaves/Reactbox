@@ -32,6 +32,7 @@ This code may be freely distributed under the MIT License
 		var fade, lightbox, image, canvas, target, gesturableImg, initialized;
 		var w = $(window).width();
 		var h = $(window).height();
+		var smallDevice = (w <= 480);
 		var defaults = {
 			type: "image",
 			href: null,
@@ -57,13 +58,18 @@ This code may be freely distributed under the MIT License
 			initialized = false;
 
 			if(gallery.length > 1){
-				arrows.fadeIn();
+				smallDevice ? arrows.show() : arrows.fadeIn();
 			}else{
 				arrows.hide();
 			}
 
-			fade.css({opacity: 0}).show().animate({opacity: 0.5}, 300);
-			lightbox.css({opacity: 0}).show().animate({opacity: 1}, 300);
+			if(smallDevice){
+				fade.css({opacity: 0.5}).show();
+				lightbox.css({opacity: 1}).show();
+			}else{
+				fade.css({opacity: 0}).show().animate({opacity: 0.5}, 300);
+				lightbox.css({opacity: 0}).show().animate({opacity: 1}, 300);
+			}
 			image.hide();
 			onResize();
 			loadImage();
@@ -85,7 +91,7 @@ This code may be freely distributed under the MIT License
 
 				open = true;
 				onResize();
-				if(!initialized && w > 480){
+				if(!initialized && !smallDevice){
 					if(target.children('img').length == 1){
 						var targetImg = target.children('img:first');
 						var bounds = [image.width(), image.height(), lightbox.offset().top, lightbox.offset().left];
@@ -98,7 +104,7 @@ This code may be freely distributed under the MIT License
 						image.fadeIn();
 					}
 				}
-				close.fadeIn();
+				smallDevice ? close.show() : close.fadeIn();;
 				initialized = true;
 			});
 		}
@@ -136,7 +142,7 @@ This code may be freely distributed under the MIT License
 		}
 
 		function closeReactbox(){
-			if(w > 480 && target.children('img').length == 1){
+			if(!smallDevice && target.children('img').length == 1){
 				var targetImg = target.children('img:first');
 				var bounds = [targetImg.width(), targetImg.height(), targetImg.offset().top, targetImg.offset().left];
 
@@ -148,8 +154,14 @@ This code may be freely distributed under the MIT License
 					lightbox.animate({opacity: 0}, 300, removeReactbox);
 				});
 			}else{
-				fade.animate({opacity: 0}, 300);
-				lightbox.animate({opacity: 0}, 300, removeReactbox);
+				if(smallDevice){
+					fade.css({opacity: 0});
+					lightbox.css({opacity: 0});
+					removeReactbox();
+				}else{
+					fade.animate({opacity: 0}, 300);
+					lightbox.animate({opacity: 0}, 300, removeReactbox);
+				}
 			}
 		}
 
@@ -176,7 +188,8 @@ This code may be freely distributed under the MIT License
 		function onResize(){
 			w = $(window).width();
 			h = $(window).height();
-			if(w <= 480){
+			smallDevice = (w <= 480);
+			if(smallDevice){
 				lightbox.css({width: '100%', height: '100%', top: 0, left: 0});
 				if(open && opts.maxWidth && opts.maxHeight){
 					image.hide();

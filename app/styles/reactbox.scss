@@ -23,21 +23,22 @@
 		span{display:inline-block; background:#FFF; border-radius: 20px; padding:5px 10px}
 	}
 	.reactbox-image{max-width:none;}
-	.reactbox-close{background: #FFF; width:40px; height:40px; line-height:40px; right:-10px; top:-10px; position: absolute; border-radius:40px; text-align: center; border:1px solid #CCC; cursor: pointer; color:#666; font-size:20px; display: none}
+	.reactbox-close{background: #FFF; width:40px; height:40px; line-height:40px; right:-10px; top:-10px; position: absolute; z-index:5001; border-radius:40px; text-align: center; border:1px solid #CCC; cursor: pointer; color:#666; font-size:20px; display: none}
 	.reactbox-arrows{
 		display: none;
-		.arrow{position: absolute; cursor: pointer; top:48%; height:70px; line-height: 60px; background:#FFF; font-size:50px; top:-webkit-calc(50% - 35px); top:calc(50% - 35px)}
+		.arrow{position: fixed; cursor: pointer; top:48%; height:70px; line-height: 60px; background:#FFF; font-size:50px; top:-webkit-calc(50% - 35px); top:calc(50% - 35px)}
 		.arrow-next{right:0; border-radius:35px 0 0 35px; padding:0 10px 0 20px;}
 		.arrow-prev{left:0; border-radius:0 35px 35px 0; padding:0 20px 0 10px;}
 	}
 	iframe{width:100%; height:100%; border:0; overflow:auto;}
 }
 @media screen and (max-width:480px) {
+	#reactbox-fade{display: none}
 	#reactbox-lightbox{
 		overflow: auto;
-		.reactbox-close{width:60px; height:60px; line-height:60px; font-size:30px; border-radius:0 0 0 30px; position: fixed;}
+		.reactbox-close{width:60px; height:60px; line-height:60px; font-size:30px; border-radius:0 0 0 30px; position: fixed}
 		.reactbox-arrows{
-			.arrow{top:auto; bottom:0}
+			.arrow{top:auto; bottom:0; position: absolute;}
 			.arrow-next{border-radius:35px 0 0 0}
 			.arrow-prev{border-radius:0 35px 0 0}
 		}
