@@ -13,15 +13,15 @@ This code may be freely distributed under the MIT License
 	var template = '														\
 		<div id="reactbox-fade"></div>										\
 		<div id="reactbox-lightbox">										\
-			<div class="reactbox-close">x</div>								\
 			<div class="reactbox-loading"><span>Carregando...</span></div>	\
-			<div class="reactbox-arrows">									\
-				<div class="arrow arrow-next">&gt;</div>					\
-				<div class="arrow arrow-prev">&lt;</div>					\
-			</div>															\
 			<div class="contents">											\
 				<img src="{{href}}" class="reactbox-image" />				\
 			</div>															\
+		</div>																\
+		<div id="reactbox-close">x</div>									\
+		<div id="reactbox-arrows">											\
+			<div class="arrow arrow-next">&gt;</div>						\
+			<div class="arrow arrow-prev">&lt;</div>						\
 		</div>																\
 	';
 
@@ -53,8 +53,8 @@ This code may be freely distributed under the MIT License
 			lightbox = $('#reactbox-lightbox');
 			image = $('#reactbox-lightbox .reactbox-image');
 			loading = $('#reactbox-lightbox .reactbox-loading');
-			arrows = $('#reactbox-lightbox .reactbox-arrows');
-			close = $('#reactbox-lightbox .reactbox-close');
+			arrows = $('#reactbox-arrows');
+			close = $('#reactbox-close');
 			initialized = false;
 
 			if(gallery.length > 1){
@@ -64,9 +64,11 @@ This code may be freely distributed under the MIT License
 			}
 
 			if(smallDevice){
+				close.show();
 				fade.css({opacity: 0.5}).show();
 				lightbox.css({opacity: 1}).show();
 			}else{
+				close.fadeIn();
 				fade.css({opacity: 0}).show().animate({opacity: 0.5}, 300);
 				lightbox.css({opacity: 0}).show().animate({opacity: 1}, 300);
 			}
@@ -104,7 +106,6 @@ This code may be freely distributed under the MIT License
 						image.fadeIn();
 					}
 				}
-				smallDevice ? close.show() : close.fadeIn();;
 				initialized = true;
 			});
 		}
@@ -133,7 +134,7 @@ This code may be freely distributed under the MIT License
 		}
 
 		function removeReactbox(){
-			$('#reactbox-fade, #reactbox-lightbox').remove();
+			$('#reactbox-fade, #reactbox-lightbox, #reactbox-arrows, #reactbox-close').remove();
 			fade = null; lightbox = null; image = null; canvas = null; target = null;
 			open = false;
 			if(gesturableImg) gesturableImg.remove();
@@ -157,9 +158,11 @@ This code may be freely distributed under the MIT License
 				if(smallDevice){
 					fade.css({opacity: 0});
 					lightbox.css({opacity: 0});
+					arrows.hide();
 					removeReactbox();
 				}else{
 					fade.animate({opacity: 0}, 300);
+					arrows.fadeOut();
 					lightbox.animate({opacity: 0}, 300, removeReactbox);
 				}
 			}
