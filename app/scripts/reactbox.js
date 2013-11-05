@@ -25,6 +25,16 @@ This code may be freely distributed under the MIT License
 		</div>																\
 	';
 
+	window.addEventListener("MSPointerDown", function(){
+		e.preventDefault();
+	}, false);
+	window.addEventListener("MSPointerMove", function(){
+		e.preventDefault();
+	}, false);
+	window.addEventListener("MSPointerUp", function(){
+		e.preventDefault();
+	}, false);
+
 	$.fn.reactbox = function(opts) {
 		var gallery = $(this);
 		var open = false;
@@ -54,7 +64,7 @@ This code may be freely distributed under the MIT License
 			image = $('#reactbox-lightbox .reactbox-image');
 			loading = $('#reactbox-lightbox .reactbox-loading');
 			arrows = $('#reactbox-arrows');
-			close = $('#reactbox-close');
+			buttonClose = $('#reactbox-close');
 			initialized = false;
 
 			if(gallery.length > 1){
@@ -62,16 +72,22 @@ This code may be freely distributed under the MIT License
 			}else{
 				arrows.hide();
 			}
+			
 
 			if(smallDevice){
-				close.show();
+				buttonClose.show();
 				fade.css({opacity: 0.5}).show();
 				lightbox.css({opacity: 1}).show();
+				if($('#reactbox-wrapper').length === 0){
+					$('<div />', { id: 'reactbox-wrapper' }).appendTo('body');
+					$('body').children().append($('#reactbox-wrapper'));
+				}
 			}else{
-				close.fadeIn();
+				buttonClose.fadeIn();
 				fade.css({opacity: 0}).show().animate({opacity: 0.5}, 300);
 				lightbox.css({opacity: 0}).show().animate({opacity: 1}, 300);
 			}
+
 			image.hide();
 			onResize();
 			loadImage();
@@ -129,11 +145,13 @@ This code may be freely distributed under the MIT License
 			if(initialized) return;
 			$(window).resize(onResize);
 			fade.click(closeReactbox);
-			close.click(closeReactbox);
+			buttonClose.click(closeReactbox);
 			arrows.find('.arrow').click(nextPrevItem);
 		}
 
 		function removeReactbox(){
+			$('#reactbox-wrapper').children().appendTo($('body'));
+			$('#reactbox-wrapper').remove();
 			$('#reactbox-fade, #reactbox-lightbox, #reactbox-arrows, #reactbox-close').remove();
 			fade = null; lightbox = null; image = null; canvas = null; target = null;
 			open = false;
@@ -147,7 +165,7 @@ This code may be freely distributed under the MIT License
 				var targetImg = target.children('img:first');
 				var bounds = [targetImg.width(), targetImg.height(), targetImg.offset().top, targetImg.offset().left];
 
-				close.fadeOut();
+				buttonClose.fadeOut();
 				arrows.fadeOut();
 				fade.animate({opacity: 0}, 300);
 				image.animate({width: bounds[0], height: bounds[1]}, 500);
@@ -194,6 +212,8 @@ This code may be freely distributed under the MIT License
 			smallDevice = (w <= 480);
 			if(smallDevice){
 				lightbox.css({width: '100%', height: '100%', top: 0, left: 0});
+				$('#reactbox-wrapper').css({overflow: 'hidden', width: w, height: h, position: 'absolute', top:0, left: 0});
+
 				if(open && opts.maxWidth && opts.maxHeight){
 					image.hide();
 					if(canvas) canvas.remove();

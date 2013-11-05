@@ -47,6 +47,7 @@ This code may be freely distributed under the MIT License
         this.mdown = false; //desktop drag
 
         this.init = false;
+        this.touches = {};
         this.checkRequestAnimationFrame();
         requestAnimationFrame(this.animate.bind(this));
 
@@ -110,7 +111,7 @@ This code may be freely distributed under the MIT License
         gesturePinchZoom: function(event) {
             var zoom = false;
 
-            if( event.targetTouches.length >= 2 ) {
+            if( typeof event.targetTouches !== "undefined" && event.targetTouches.length >= 2 ) {
                 var p1 = event.targetTouches[0];
                 var p2 = event.targetTouches[1];
                 var zoomScale = Math.sqrt(Math.pow(p2.pageX - p1.pageX, 2) + Math.pow(p2.pageY - p1.pageY, 2)); //euclidian distance
@@ -120,7 +121,19 @@ This code may be freely distributed under the MIT License
                 }
 
                 this.lastZoomScale = zoomScale;
-            }    
+            }else if( typeof event.targetTouches === "undefined" && typeof this.touches[0] !== "undefined" && typeof this.touches[1] !== "undefined" ){ // Windows Phone
+
+                var p1 = this.touches[0].e;
+                var p2 = this.touches[1].e;
+                var zoomScale = Math.sqrt(Math.pow(p2.pageX - p1.pageX, 2) + Math.pow(p2.pageY - p1.pageY, 2)); //euclidian distance
+
+                if( this.lastZoomScale ) {
+                    zoom = zoomScale - this.lastZoomScale;
+                }
+
+                this.lastZoomScale = zoomScale;
+
+            }
 
             return zoom;
         },
@@ -203,28 +216,60 @@ This code may be freely distributed under the MIT License
             this.lastY = relativeY;
         },
 
-        setEventListeners: function() {
-            // touch
-            this.canvas.addEventListener('touchstart', function(e) {
-                this.lastX          = null;
-                this.lastY          = null;
-                this.lastZoomScale  = null;
-            }.bind(this));
+        touchStart: function(self) {
+            return function(e){
+                self.lastX          = null;
+                self.lastY          = null;
+                self.lastZoomScale  = null;
+            }
+        },
 
-            this.canvas.addEventListener('touchmove', function(e) {
+        touchMove: function(self) {
+            return function(e){
                 e.preventDefault();
-                
-                if(e.targetTouches.length == 2) { //pinch
-                    this.doZoom(this.gesturePinchZoom(e));
-                }
-                else if(e.targetTouches.length == 1) {
-                    var relativeX = e.targetTouches[0].pageX - this.canvas.getBoundingClientRect().left;
-                    var relativeY = e.targetTouches[0].pageY - this.canvas.getBoundingClientRect().top;                
-                    this.doMove(relativeX, relativeY);
-                }
-            }.bind(this));
 
-            if(this.desktop) {
+                // Windows Phone Support
+                if(!e.targetTouches){
+                    var pos = (e.isPrimary ? 0 : 1);
+                    if(!self.touches) self.touches = {};
+                    self.touches[pos] = {
+                        e: e,
+                        timeout: (function(pos){
+                            setTimeout(function(){
+                                delete self.touches[pos];
+                            }, 100);
+                        })(pos)
+                    };
+                }
+                
+                if(/* All mobile browsers */ (typeof e.targetTouches !== "undefined" && e.targetTouches.length == 2) ||
+                   /* Windows Phone */ (typeof e.targetTouches === "undefined" && typeof self.touches[0] !== "undefined" && typeof self.touches[1] !== "undefined")) { //pinch
+                    self.doZoom(self.gesturePinchZoom(e));
+                }
+                else if((typeof e.targetTouches !== "undefined" && e.targetTouches.length === 1) || (typeof e.targetTouches === "undefined" && typeof self.touches[0] !== "undefined" && typeof self.touches[1] === "undefined")) {
+                    if(typeof e.targetTouches !== "undefined"){ /* All mobile browsers */
+                        var relativeX = e.targetTouches[0].pageX - self.canvas.getBoundingClientRect().left;
+                        var relativeY = e.targetTouches[0].pageY - self.canvas.getBoundingClientRect().top;    
+                    }else{ /* Windows Phone */
+                        var relativeX = self.touches[0].e.pageX - self.canvas.getBoundingClientRect().left;
+                        var relativeY = self.touches[0].e.pageY - self.canvas.getBoundingClientRect().top;
+                    }            
+                    self.doMove(relativeX, relativeY);
+                }
+            }
+        },
+
+        setEventListeners: function() {
+            //if (typeof this.canvas.style.msTouchAction != 'undefined')
+            //    this.canvas.style.msTouchAction = "none";
+
+            // touch
+            this.canvas.addEventListener('touchstart', this.touchStart(this).bind(this));
+            this.canvas.addEventListener('touchmove', this.touchMove(this).bind(this));
+            this.canvas.addEventListener('MSPointerDown', this.touchStart(this).bind(this));
+            this.canvas.addEventListener('MSPointerMove', this.touchMove(this).bind(this));
+
+            if(!this.canvas.style.msTouchAction && this.desktop) {
                 // keyboard+mouse
                 window.addEventListener('keyup', function(e) {
                     if(e.keyCode == 187 || e.keyCode == 61) { //+
